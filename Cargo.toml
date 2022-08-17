@@ -18,13 +18,13 @@ anyhow = { version = "1.0.59" }
 log = "0.4.17"
 safer-ffi = { version = "0.1.0", git = "https://github.com/getditto/safer_ffi.git", features = [
   "log",
-], rev = "acbf214e9e0dff35f97b1c83d2face8dc629a6c4" }
+], branch = "inventory-bump" }
 strum = { version = "0.24.1", features = ["derive"] }
 wmjtyd-libstock = { git = "https://github.com/wmjtyd/libstock", branch = "develop", version = "0.4.0-dev" }
 
 [features]
 default = ["headers"]
-headers = ["safer-ffi/headers"]
+headers = ["safer-ffi/headers", "safer-ffi/inventory-0-3-1"]
 
 [[bin]]
 name = "gen-header"

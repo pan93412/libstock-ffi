@@ -6,3 +6,5 @@ pub mod errors;
 
 #[cfg(feature = "headers")]
 pub mod header;
+
+pub use errors::*;
