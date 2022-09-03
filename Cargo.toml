@@ -14,13 +14,13 @@ crate-type = [
 ]
 
 [dependencies]
-anyhow = { version = "1.0.59" }
+anyhow = { version = "1.0.63" }
 log = "0.4.17"
 safer-ffi = { version = "0.1.0", git = "https://github.com/getditto/safer_ffi.git", features = [
   "log",
-], branch = "inventory-bump" }
+], rev = "f69aeb1727bc2f2d68ea5de6bc887411bad12b0a" }
 strum = { version = "0.24.1", features = ["derive"] }
-wmjtyd-libstock = { git = "https://github.com/wmjtyd/libstock", branch = "develop", version = "0.4.0-dev" }
+wmjtyd-libstock = { git = "https://github.com/wmjtyd/libstock", branch = "develop", version = "0.4.0-pre.2" }
 
 [features]
 default = ["headers"]
