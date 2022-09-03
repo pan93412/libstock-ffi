@@ -1,25 +1,29 @@
+use std::error::Error;
+use std::ffi::OsString;
+use std::os::raw::c_char;
+use std::sync::Mutex;
+
 use ::safer_ffi::prelude::*;
-use std::{sync::Mutex, error::Error, os::raw::c_char, ffi::OsString};
 
 static LAST_ERROR: Mutex<Option<anyhow::Error>> = Mutex::new(None);
 
 // Inspired from https://michael-f-bryan.github.io/rust-ffi-guide/errors/return_types.html
 
 /// 傳入一個錯誤物件，回傳 Option。
-/// 
+///
 /// 這個 [`Option`] 可以用來做 Early Return。
 /// `safer-ffi` 會將 `None` 轉換為 null pointer。
-/// 
+///
 /// # Example
-/// 
+///
 /// ```
 /// use libstock_ffi::errors::update_error_message;
-/// 
+///
 /// fn error_func() -> Option<()> {
 ///     update_error_message("Error message.")?;
 ///     Some(())
 /// }
-/// 
+///
 /// assert_eq(error_func(), None);
 /// ```
 pub fn update_error_message<E: Error + 'static + Send + Sync>(error: E) -> Option<()> {
@@ -36,7 +40,7 @@ pub fn take_error() -> Option<anyhow::Error> {
 
 /// Calculate the number of bytes in the last error's error message **not**
 /// including any trailing `null` characters.
-/// 
+///
 /// The return value is based on your system's representation.
 #[ffi_export]
 pub fn last_error_length() -> isize {
@@ -49,10 +53,13 @@ pub fn last_error_length() -> isize {
         }
     };
 
-    error.as_ref().map(|v| {
-       let os_str = OsString::from(v.to_string());
-       os_str.len() + 1
-    }).unwrap_or(0) as isize
+    error
+        .as_ref()
+        .map(|v| {
+            let os_str = OsString::from(v.to_string());
+            os_str.len() + 1
+        })
+        .unwrap_or(0) as isize
 }
 
 #[ffi_export]
@@ -68,7 +75,6 @@ pub fn get_error_message(mut buffer: c_slice::Mut<'_, c_char>) -> isize {
     let errmsg = error.to_string();
     let errlen = errmsg.len();
 
-
     if errlen >= buffer.len() {
         log::warn!("Buffer provided for writing the last error message is too small.");
         log::warn!(
@@ -83,11 +89,7 @@ pub fn get_error_message(mut buffer: c_slice::Mut<'_, c_char>) -> isize {
     unsafe {
         // SAFETY: We have ensured that the buffer is always
         // greater than the length of the error message.
-        std::ptr::copy_nonoverlapping(
-            errmsg.as_ptr(),
-            buffer.as_mut_ptr() as *mut u8,
-            errlen
-        );
+        std::ptr::copy_nonoverlapping(errmsg.as_ptr(), buffer.as_mut_ptr() as *mut u8, errlen);
     }
 
     // Add a trailing null so people using the string as a `char *` don't
