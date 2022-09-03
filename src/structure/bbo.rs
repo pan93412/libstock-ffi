@@ -14,10 +14,10 @@ use crate::serializer::{construct_deserializer, construct_free_function, constru
 #[derive_ReprC]
 #[repr(C)]
 pub struct BboStructure {
-    /// 交易所時間戳
+    /// 交易所時間戳（毫秒）
     pub exchange_timestamp: u64,
 
-    /// 收到時間戳
+    /// 收到時間戳（毫秒）
     pub received_timestamp: u64,
 
     /// 交易所類型 (EXCHANGE)
@@ -42,10 +42,10 @@ pub struct BboStructure {
     pub bids: PriceDataField,
 }
 
-impl TryFrom<BboStructure> for RBboStructure {
+impl TryFrom<&BboStructure> for RBboStructure {
     type Error = anyhow::Error;
 
-    fn try_from(value: BboStructure) -> Result<Self, Self::Error> {
+    fn try_from(value: &BboStructure) -> Result<Self, Self::Error> {
         Ok(Self::builder()
             .exchange_timestamp(value.exchange_timestamp as i64)
             .received_timestamp(value.received_timestamp.into())
@@ -53,8 +53,25 @@ impl TryFrom<BboStructure> for RBboStructure {
             .market_type(value.market_type)
             .message_type(value.message_type)
             .symbol(SymbolPairField::from_pair(value.symbol.to_str()))
-            .asks(value.asks.try_into()?)
-            .bids(value.bids.try_into()?)
+            .asks(value.asks.clone().try_into()?)
+            .bids(value.bids.clone().try_into()?)
+            .build())
+    }
+}
+
+impl TryFrom<&RBboStructure> for BboStructure {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &RBboStructure) -> Result<Self, Self::Error> {
+        Ok(Self::builder()
+            .exchange_timestamp(value.exchange_timestamp.0)
+            .received_timestamp(value.received_timestamp.0)
+            .exchange_type(value.exchange_type)
+            .market_type(value.market_type)
+            .message_type(value.message_type)
+            .symbol(value.symbol.pair.clone().try_into()?)
+            .asks(value.asks.clone().try_into()?)
+            .bids(value.bids.clone().try_into()?)
             .build())
     }
 }
@@ -63,16 +80,15 @@ impl TryFrom<RBboStructure> for BboStructure {
     type Error = anyhow::Error;
 
     fn try_from(value: RBboStructure) -> Result<Self, Self::Error> {
-        Ok(Self::builder()
-            .exchange_timestamp(value.exchange_timestamp.0)
-            .received_timestamp(value.received_timestamp.0)
-            .exchange_type(value.exchange_type)
-            .market_type(value.market_type)
-            .message_type(value.message_type)
-            .symbol(value.symbol.pair.try_into()?)
-            .asks(value.asks.try_into()?)
-            .bids(value.bids.try_into()?)
-            .build())
+        Self::try_from(&value)
+    }
+}
+
+impl TryFrom<BboStructure> for RBboStructure {
+    type Error = anyhow::Error;
+
+    fn try_from(value: BboStructure) -> Result<Self, Self::Error> {
+        Self::try_from(&value)
     }
 }
 

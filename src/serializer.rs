@@ -26,14 +26,14 @@ where
 /// 序列化指定結構體的 C FFI 版本
 ///
 /// 詳見 [`serialize`]。
-pub fn serialize_ffi<FFI, S, E>(
-    src: FFI,
+pub fn serialize_ffi<'a, FFI, S, E>(
+    src: &'a FFI,
     buf: c_slice::Mut<u8>,
     written_size: &mut usize,
 ) -> anyhow::Result<()>
 where
-    FFI: ReprC,
-    S: TryFrom<FFI, Error = anyhow::Error> + StructSerializer<Err = E>,
+    FFI: ReprC + 'a,
+    S: TryFrom<&'a FFI, Error = anyhow::Error> + StructSerializer<Err = E>,
     E: std::error::Error + Send + Sync + 'static,
 {
     let src = S::try_from(src)?;
@@ -42,7 +42,7 @@ where
 }
 
 /// 從 data 讀取資料，並將資料反序列化為指定結構體
-pub fn deserialize<S, E>(data: c_slice::Ref<'_, u8>) -> Result<S, anyhow::Error>
+pub fn deserialize<S, E>(data: &c_slice::Ref<'_, u8>) -> Result<S, anyhow::Error>
 where
     S: StructDeserializer<Err = E>,
     E: std::error::Error + Send + Sync + 'static,
@@ -51,7 +51,7 @@ where
 }
 
 /// 從 data 讀取資料，並將資料反序列化為指定的 FFI 結構體
-pub fn deserialize_ffi<FFI, S, E>(data: c_slice::Ref<'_, u8>) -> Result<repr_c::Box<FFI>, anyhow::Error>
+pub fn deserialize_ffi<FFI, S, E>(data: &c_slice::Ref<'_, u8>) -> Result<repr_c::Box<FFI>, anyhow::Error>
 where
     FFI: TryFrom<S, Error = anyhow::Error> + ReprC,
     S: StructDeserializer<Err = E>,
@@ -63,8 +63,11 @@ where
 macro_rules! construct_serializer {
     ($name:ident, $ffi_struct:ident, $rust_struct:ident) => {
         #[::safer_ffi::ffi_export]
+        #[doc = concat!("將傳入的 ", stringify!($ffi_struct), " 序列化，並將內容放入 buf 中")]
+        #[doc = ""]
+        #[doc = "written_size 是實際寫入的大小。"]
         pub fn $name(
-            src: $ffi_struct,
+            src: &$ffi_struct,
             buf: ::safer_ffi::prelude::c_slice::Mut<'_, u8>,
             written_size: &mut usize,
         ) -> bool {
@@ -88,7 +91,10 @@ macro_rules! construct_serializer {
 macro_rules! construct_deserializer {
     ($name:ident, $ffi_struct:ident, $rust_struct:ident) => {
         #[::safer_ffi::ffi_export]
-        pub fn $name(data: ::safer_ffi::prelude::c_slice::Ref<'_, u8>) -> Option<::safer_ffi::prelude::repr_c::Box<$ffi_struct>> {
+        #[doc = concat!("將傳入的 data 反序列化回 ", stringify!($ffi_struct), " 結構體")]
+        #[doc = ""]
+        #[doc = "請稍後使用本結構體對應的 free 函數釋放記憶體，否則可能導致 Memory Leak。"]
+        pub fn $name(data: &::safer_ffi::prelude::c_slice::Ref<'_, u8>) -> Option<::safer_ffi::prelude::repr_c::Box<$ffi_struct>> {
             let result = $crate::serializer::deserialize_ffi::<$ffi_struct, $rust_struct, _>(
                 data
             );
@@ -107,8 +113,9 @@ macro_rules! construct_deserializer {
 macro_rules! construct_free_function {
     ($name:ident, $ffi_struct:ident) => {
         #[::safer_ffi::ffi_export]
+        #[doc = concat!("釋放 ", stringify!($ffi_struct), " 佔用的記憶體")]
         pub fn $name(v: Option<::safer_ffi::prelude::repr_c::Box<$ffi_struct>>) {
-            drop(v);
+            drop(v)
         }
     }
 }

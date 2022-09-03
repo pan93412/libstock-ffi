@@ -40,4 +40,4 @@ dist: build-release create-dist-dir dist/libstock-release.h
 	rm ./dist/*.d
 
 exp: dist/libwmjtyd_libstock_ffi.a
-	$(CC) -o ./exp exp.c -L./dist -lwmjtyd_libstock_ffi -std=c11 
+	$(CC) -o exp examples/testcode.c -L./dist -lwmjtyd_libstock_ffi -std=c11 -framework CoreFoundation

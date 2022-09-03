@@ -2,6 +2,7 @@ use safer_ffi::prelude::*;
 use wmjtyd_libstock::data::fields::DecimalField;
 pub use wmjtyd_libstock::data::fields::PriceDataField as RPriceDataField;
 
+#[derive(Clone, Debug)]
 #[derive_ReprC]
 #[repr(C)]
 pub struct PriceDataField {

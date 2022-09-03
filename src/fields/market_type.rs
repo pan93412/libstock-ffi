@@ -2,6 +2,7 @@ use safer_ffi::prelude::*;
 pub use wmjtyd_libstock::data::fields::market_type::MarketType as RMarketType;
 pub use wmjtyd_libstock::data::fields::market_type::MarketTypeField as RMarketTypeField;
 
+#[derive(Copy, Clone, Debug)]
 #[derive_ReprC]
 #[repr(u8)]
 pub enum MarketType {
