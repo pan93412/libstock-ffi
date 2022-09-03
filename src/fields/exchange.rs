@@ -1,8 +1,7 @@
 use ::safer_ffi::prelude::*;
 use strum::FromRepr;
-pub use wmjtyd_libstock::data::fields::exchange_type::{
-    Exchange as RExchange,
-};
+pub use wmjtyd_libstock::data::fields::ExchangeTypeField as RExchangeTypeField;
+pub use wmjtyd_libstock::data::fields::exchange_type::Exchange as RExchange;
 
 #[derive(Copy, Clone, FromRepr, Debug)]
 #[derive_ReprC]
@@ -25,5 +24,17 @@ impl From<RExchange> for Exchange {
 impl From<Exchange> for RExchange {
     fn from(src: Exchange) -> Self {
         Self::from_repr(src as usize).unwrap()
+    }
+}
+
+impl From<Exchange> for RExchangeTypeField {
+    fn from(e: Exchange) -> Self {
+        Self(e.into())
+    }
+}
+
+impl From<RExchangeTypeField> for Exchange {
+    fn from(e: RExchangeTypeField) -> Self {
+        Self::from(e.0)
     }
 }

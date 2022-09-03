@@ -1,6 +1,3 @@
-use std::error::Error;
-use std::ffi::OsString;
-use std::os::raw::c_char;
 use std::sync::Mutex;
 
 use ::safer_ffi::prelude::*;
@@ -9,7 +6,7 @@ static LAST_ERROR: Mutex<Option<anyhow::Error>> = Mutex::new(None);
 
 // Inspired from https://michael-f-bryan.github.io/rust-ffi-guide/errors/return_types.html
 
-/// 傳入一個錯誤物件，回傳 Option。
+/// 傳入 [`anyhow::Error`]，回傳 Option。
 ///
 /// 這個 [`Option`] 可以用來做 Early Return。
 /// `safer-ffi` 會將 `None` 轉換為 null pointer。
@@ -26,75 +23,41 @@ static LAST_ERROR: Mutex<Option<anyhow::Error>> = Mutex::new(None);
 ///
 /// assert_eq(error_func(), None);
 /// ```
-pub fn update_error_message<E: Error + 'static + Send + Sync>(error: E) -> Option<()> {
-    log::error!("Error happened: {error}. Updating error messages…");
+pub fn update_error_message(error: anyhow::Error) -> Option<()> {
+    tracing::error!("Error happened: {error}. Updating error messages…");
 
-    LAST_ERROR.lock().unwrap().replace(error.into());
+    LAST_ERROR.lock().unwrap().replace(error);
 
     None
 }
 
-pub fn take_error() -> Option<anyhow::Error> {
+fn take_error() -> Option<anyhow::Error> {
     LAST_ERROR.lock().ok().and_then(|mut v| v.take())
 }
 
-/// Calculate the number of bytes in the last error's error message **not**
-/// including any trailing `null` characters.
-///
-/// The return value is based on your system's representation.
+/// 取得 [`update_error_message`] 存入的錯誤訊息。
 #[ffi_export]
-pub fn last_error_length() -> isize {
-    let error = LAST_ERROR.lock();
-    let error = match error {
-        Ok(error) => error,
-        Err(e) => {
-            log::error!("Failed to get LAST_ERROR: {e}");
-            return -1;
+#[tracing::instrument]
+pub fn get_error_message() -> Option<char_p::Box> {
+    match take_error() {
+        Some(e) => {
+            let m = e.to_string();
+
+            match char_p::Box::try_from(m) {
+                Ok(v) => Some(v),
+                Err(e) => {
+                    tracing::error!("Failed to convert error message to char_p::Box: {e}");
+                    None
+                }
+            }
         }
-    };
-
-    error
-        .as_ref()
-        .map(|v| {
-            let os_str = OsString::from(v.to_string());
-            os_str.len() + 1
-        })
-        .unwrap_or(0) as isize
-}
-
-#[ffi_export]
-pub fn get_error_message(mut buffer: c_slice::Mut<'_, c_char>) -> isize {
-    let error = match take_error() {
-        Some(e) => e,
         None => {
-            log::warn!("No error message found.");
-            return -1;
+            tracing::warn!("No error message found.");
+            None
         }
-    };
-
-    let errmsg = error.to_string();
-    let errlen = errmsg.len();
-
-    if errlen >= buffer.len() {
-        log::warn!("Buffer provided for writing the last error message is too small.");
-        log::warn!(
-            "Expected at least {} bytes but got {}",
-            errlen + 1,
-            buffer.len()
-        );
-        return -1;
     }
-
-    // Copy the error message to the buffer.
-    unsafe {
-        // SAFETY: We have ensured that the buffer is always
-        // greater than the length of the error message.
-        std::ptr::copy_nonoverlapping(errmsg.as_ptr(), buffer.as_mut_ptr() as *mut u8, errlen);
-    }
-
-    // Add a trailing null so people using the string as a `char *` don't
-    // accidentally read into garbage.
-    buffer[errlen] = 0;
-
-    errlen as isize
 }
+
+/// 釋放 [`get_error_message`] 取出的錯誤訊息。
+#[ffi_export]
+pub fn free_error_message(v: Option<char_p::Box>) { drop(v) }
