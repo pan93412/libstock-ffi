@@ -8,6 +8,7 @@ use crate::serializer::{construct_deserializer, construct_free_function, constru
 
 /// The structure of BBO.
 #[derive(TypedBuilder)]
+#[derive(Clone, Debug)]
 #[derive_ReprC]
 #[repr(C)]
 pub struct BboStructure {
