@@ -6,6 +6,7 @@ pub mod market_type;
 pub mod message_type;
 pub mod kline_indicators;
 pub mod period;
+pub mod trade_side;
 
 pub use exchange::Exchange;
 pub use price_data::PriceDataField;
@@ -13,3 +14,4 @@ pub use market_type::MarketType;
 pub use message_type::MessageType;
 pub use kline_indicators::KlineIndicatorsField;
 pub use period::Period;
+pub use trade_side::TradeSide;
