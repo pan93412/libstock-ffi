@@ -13,10 +13,10 @@ pub struct PriceDataField {
     pub quantity_base: char_p::Box,
 }
 
-impl TryFrom<RPriceDataField> for PriceDataField {
+impl TryFrom<&RPriceDataField> for PriceDataField {
     type Error = anyhow::Error;
 
-    fn try_from(src: RPriceDataField) -> Result<Self, Self::Error> {
+    fn try_from(src: &RPriceDataField) -> Result<Self, Self::Error> {
         Ok(Self {
             price: src.price.to_string().try_into()?,
             quantity_base: src.quantity_base.to_string().try_into()?,
@@ -24,13 +24,29 @@ impl TryFrom<RPriceDataField> for PriceDataField {
     }
 }
 
-impl TryFrom<PriceDataField> for RPriceDataField {
+impl TryFrom<&PriceDataField> for RPriceDataField {
     type Error = anyhow::Error;
 
-    fn try_from(src: PriceDataField) -> Result<Self, Self::Error> {
+    fn try_from(src: &PriceDataField) -> Result<Self, Self::Error> {
         Ok(Self {
             price: DecimalField::try_from(src.price.to_str())?,
             quantity_base: DecimalField::try_from(src.quantity_base.to_str())?,
         })
+    }
+}
+
+impl TryFrom<RPriceDataField> for PriceDataField {
+    type Error = anyhow::Error;
+
+    fn try_from(src: RPriceDataField) -> Result<Self, Self::Error> {
+        Self::try_from(&src)
+    }
+}
+
+impl TryFrom<PriceDataField> for RPriceDataField {
+    type Error = anyhow::Error;
+
+    fn try_from(src: PriceDataField) -> Result<Self, Self::Error> {
+        Self::try_from(&src)
     }
 }
