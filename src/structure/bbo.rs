@@ -7,9 +7,6 @@ use crate::fields::{Exchange, MarketType, MessageType, PriceDataField};
 use crate::serializer::{construct_deserializer, construct_free_function, construct_serializer};
 
 /// The structure of BBO.
-///
-/// You can take advantage of `builder()`
-/// to construct some fields automatically.
 #[derive(TypedBuilder)]
 #[derive_ReprC]
 #[repr(C)]
@@ -32,8 +29,8 @@ pub struct BboStructure {
     #[builder(setter(into))]
     pub message_type: MessageType,
 
-    /// SYMBOL, for example: BTC/USDT
-    pub symbol: char_p::Box,
+    /// Pair，如 `BTC/USDT`
+    pub pair: char_p::Box,
 
     /// 最優賣出報價資訊 (asks)
     pub asks: PriceDataField,
@@ -52,7 +49,7 @@ impl TryFrom<&BboStructure> for RBboStructure {
             .exchange_type(value.exchange_type)
             .market_type(value.market_type)
             .message_type(value.message_type)
-            .symbol(SymbolPairField::from_pair(value.symbol.to_str()))
+            .symbol(SymbolPairField::from_pair(value.pair.to_str()))
             .asks(value.asks.clone().try_into()?)
             .bids(value.bids.clone().try_into()?)
             .build())
@@ -69,7 +66,7 @@ impl TryFrom<&RBboStructure> for BboStructure {
             .exchange_type(value.exchange_type)
             .market_type(value.market_type)
             .message_type(value.message_type)
-            .symbol(value.symbol.pair.clone().try_into()?)
+            .pair(value.symbol.pair.clone().try_into()?)
             .asks(value.asks.clone().try_into()?)
             .bids(value.bids.clone().try_into()?)
             .build())
