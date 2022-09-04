@@ -1,3 +1,5 @@
+//! Libstock FFI 的錯誤處理模組
+
 use std::sync::Mutex;
 
 use ::safer_ffi::prelude::*;

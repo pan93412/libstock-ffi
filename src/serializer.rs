@@ -1,3 +1,5 @@
+//! Libstock FFI 的 C 端 serializer 及其釋放 (free) 函數封裝
+
 use std::io::Cursor;
 
 use safer_ffi::prelude::*;
@@ -61,7 +63,7 @@ where
 }
 
 macro_rules! construct_serializer {
-    ($name:ident, $ffi_struct:ident, $rust_struct:ident) => {
+    ($name:ident, $ffi_struct:path, $rust_struct:path) => {
         #[::safer_ffi::ffi_export]
         #[doc = concat!("將傳入的 ", stringify!($ffi_struct), " 序列化，並將內容放入 buf 中")]
         #[doc = ""]
@@ -89,7 +91,7 @@ macro_rules! construct_serializer {
 }
 
 macro_rules! construct_deserializer {
-    ($name:ident, $ffi_struct:ident, $rust_struct:ident) => {
+    ($name:ident, $ffi_struct:path, $rust_struct:path) => {
         #[::safer_ffi::ffi_export]
         #[doc = concat!("將傳入的 data 反序列化回 ", stringify!($ffi_struct), " 結構體")]
         #[doc = ""]
@@ -111,7 +113,7 @@ macro_rules! construct_deserializer {
 }
 
 macro_rules! construct_free_function {
-    ($name:ident, $ffi_struct:ident) => {
+    ($name:ident, $ffi_struct:path) => {
         #[::safer_ffi::ffi_export]
         #[doc = concat!("釋放 ", stringify!($ffi_struct), " 佔用的記憶體")]
         pub fn $name(v: Option<::safer_ffi::prelude::repr_c::Box<$ffi_struct>>) {

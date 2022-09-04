@@ -1,4 +1,5 @@
 use safer_ffi::prelude::*;
+use anyhow::Context;
 use wmjtyd_libstock::data::fields::DecimalField;
 pub use wmjtyd_libstock::data::fields::PriceDataField as RPriceDataField;
 
@@ -6,10 +7,10 @@ pub use wmjtyd_libstock::data::fields::PriceDataField as RPriceDataField;
 #[derive_ReprC]
 #[repr(C)]
 pub struct PriceDataField {
-    /// 價格 (10 bytes)
+    /// 價格（64 位浮點數字串）
     pub price: char_p::Box,
 
-    /// 基本量 (10 bytes)
+    /// 基本量（64 位浮點數字串）
     pub quantity_base: char_p::Box,
 }
 
@@ -29,8 +30,8 @@ impl TryFrom<&PriceDataField> for RPriceDataField {
 
     fn try_from(src: &PriceDataField) -> Result<Self, Self::Error> {
         Ok(Self {
-            price: DecimalField::try_from(src.price.to_str())?,
-            quantity_base: DecimalField::try_from(src.quantity_base.to_str())?,
+            price: DecimalField::try_from(src.price.to_str()).context("Not a valid decimal format")?,
+            quantity_base: DecimalField::try_from(src.quantity_base.to_str()).context("Not a valid decimal format")?,
         })
     }
 }
